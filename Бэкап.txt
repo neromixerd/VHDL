@@ -1,0 +1,86 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+--use IEEE.STD_LOGIC_ARITH.ALL;
+use ieee.numeric_std.all;
+
+entity FIRfilter is
+     
+    Port (
+         StopSig : IN  std_logic;
+         TaktFreq : IN  std_logic;
+         InSig : IN  std_logic_vector(15 downto 0);
+         OutSig : OUT  std_logic_vector(37 downto 0));
+             
+end FIRfilter;
+ 
+ 
+architecture Behavioral of FIRfilter is
+ COMPONENT ROM
+  PORT (
+     clka : IN STD_LOGIC;
+    addra : IN STD_LOGIC_VECTOR(4 DOWNTO 0);
+    douta : OUT STD_LOGIC_VECTOR(21 DOWNTO 0)
+  );
+END COMPONENT;
+
+ type Koef is array(19 downto 0) of std_logic_vector(21 downto 0);
+ type Output is array(0 to 18) of std_logic_vector(37 downto 0);
+ signal Inpu:std_logic_vector(15 downto 0);
+ signal Outpu:Output;
+ signal Adr: STD_LOGIC_VECTOR(4 DOWNTO 0);
+ signal Outt: STD_LOGIC_VECTOR(21 DOWNTO 0);  
+ signal Koe: Koef;
+ 
+begin
+
+ KKK : ROM
+  PORT MAP (
+    clka => TaktFreq,
+    addra => Adr,
+    douta => Outt
+  );
+  
+  process(Adr,TaktFreq)
+   variable ind: integer:=0;
+	 begin
+	  if rising_edge(TaktFreq) then
+	  Adr<=std_logic_vector(to_signed(ind,5));
+	    if (ind>0 and ind<19) then
+	  Koe(ind-1)<=Outt;
+	     end if;
+	    if (ind<19) then
+	     ind:= ind+1;
+	    end if;
+	  end if;
+	 end process;
+  
+  process(TaktFreq)
+   begin
+	if (TaktFreq' event and TaktFreq='1') then
+	   Inpu(15 downto 0) <= InSig(15 downto 0);
+		Outpu(0)(37 downto 0)<=std_logic_vector(signed(Inpu) * signed(Koe(0)));
+	for i in 1 to 18 loop		
+    Outpu(i)(37 downto 0) <= std_logic_vector((signed(Inpu) * signed(Koe(i))) + signed(Outpu(i-1)));	
+   end loop;
+	end if;
+  end process;
+
+OutSig<=Outpu(18);
+
+	  
+--process(TaktFreq,StopSig)
+ --begin
+	--if StopSig='1' then
+		--for i in 0 to 15 loop
+		--	Inpu(i) <= (others => '0');
+		--end loop ; 
+	--elsif (TaktFreq'event and TaktFreq='1') then
+	--	Inpu(0)(15 downto 0) <= InSig(15 downto 0);
+	--	for i in 1 to 15 loop 	
+		--	Inpu(i)(15 downto 0) <= Inpu(i-1)(15 downto 0);		
+		--end loop;
+	--end if;
+-- end process;
+
+end Behavioral;

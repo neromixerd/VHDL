@@ -1,0 +1,59 @@
+----------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use ieee.numeric_std.all;
+
+
+entity mixer is
+    Port ( InSig : in  STD_LOGIC_vector(15 downto 0);
+           Koef : in  STD_LOGIC_vector(21 downto 0);
+           TaktFreq : in  STD_LOGIC;
+           StopSig : in  STD_LOGIC;
+           OutSig : out  STD_LOGIC_vector(37 downto 0));
+end mixer;
+
+architecture Behavioral of mixer is
+
+type output is array(0 to 18) of std_logic_vector(37 downto 0);
+signal input : std_logic_vector(15 downto 0);
+signal outt: output;
+
+begin
+
+process(TaktFreq)
+variable ind: integer:=0;
+ begin
+ if (ind>=0 and ind<19) then
+   if (TaktFreq' event and TaktFreq='1') then
+      input(15 downto 0)<=InSig(15 downto 0);
+		if (ind = 0) then
+		outt(ind)<= std_logic_vector(signed(input)*signed(Koef));
+		else
+	   outt(ind) <= std_logic_vector(signed(input)*signed(Koef) + signed(outt(ind-1)));
+		end if;
+	end if;
+ end if;
+ if(ind<19) then
+   ind:= ind+1;
+ end if;
+ if (ind = 19) then
+   OutSig<=outt(ind-1);
+ end if;
+ end process;
+ 
+end Behavioral;

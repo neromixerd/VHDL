@@ -1,0 +1,119 @@
+--------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------
+LIBRARY ieee;
+--use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use ieee.numeric_std.all;
+use STD.TEXTIO.all;
+
+ 
+
+ 
+ENTITY Test IS
+END Test;
+ 
+ARCHITECTURE behavior OF Test IS 
+    -- Component Declaration for the Unit Under Test (UUT)
+ 
+    COMPONENT FIRfilter
+    PORT(
+         StopSig : IN  std_logic;
+         TaktFreq : IN  std_logic;
+         InSig : IN  std_logic_vector(15 downto 0);
+         OutSig : OUT  std_logic_vector(37 downto 0)
+        );
+    END COMPONENT;
+    
+
+   signal StopSig : std_logic:='1';
+   signal TaktFreq : std_logic:='0';
+   signal InSig : std_logic_vector(15 downto 0) := (others => '0');
+   
+   signal OutSig : std_logic_vector(37 downto 0);
+   signal output_is_here : std_logic:='0';
+	signal input : std_logic_vector(15 downto 0);
+	file input_this : TEXT open READ_MODE is "thisinput.txt";
+	file output_that : TEXT open WRITE_MODE is "thatoutput.txt";
+	
+ 
+BEGIN
+ FIR : FIRfilter
+   port map (
+ InSig => InSig,
+ OutSig => OutSig,
+ TaktFreq => TaktFreq,
+ StopSig => StopSig
+ );
+ 
+ 
+	process (TaktFreq)
+	begin
+	TaktFreq <= not TaktFreq after 10 ns;
+	end process;
+
+   StopSig <= '1', '0' after 50 ns, '1' after 703 ns;
+
+ --for i in 0 to 50 loop
+
+ --TaktFreq <= '0'; wait for 30 ns;
+
+ --TaktFreq <= '1'; wait for 30 ns;
+
+ --end loop;
+
+ --end process; 
+
+   process(TaktFreq)
+	variable my_input : LINE;
+	variable input13: integer;
+	begin
+	   if StopSig = '1' then
+		InSig<=(others=>'0');
+		input<=(others=>'0');
+		output_is_here <= '0';
+		elsif rising_edge(TaktFreq) then
+		 readline(input_this, my_input);
+		 read(my_input,input13);
+		 InSig <= std_logic_vector(to_signed(input13,16));
+       output_is_here <= '1';
+		 end if;
+   end process;
+	
+	process(TaktFreq)
+	variable my_output : LINE;
+	variable input13: integer;
+	begin
+	  if falling_edge(TaktFreq) then
+	      if output_is_here = '1' then
+			   write(my_output, to_integer( signed(OutSig)));
+				writeline(output_that,my_output);
+			end if;
+		end if;
+	end process;
+	
+ --process begin
+
+ --StopSig <= '1'; wait for 10 ns;
+
+ --StopSig <= '0' ; 
+
+ --InSig <= "0000000000000001"; wait for 10 ns;
+
+ --InSig <= "0000000000000000"; wait for 500 ns;
+
+ --end process; 
+
+end behavior;
